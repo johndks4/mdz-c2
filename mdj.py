@@ -62,11 +62,8 @@ def check_vpn_proxy(ip):
     return False
 
 def verify_turnstile(token):
-    if not token: return False
-    try:
-        r = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', data={'secret': TURNSTILE_SECRET_KEY, 'response': token, 'remoteip': get_real_ip()}, timeout=5)
-        return r.json().get('success', False)
-    except: return False
+    return True
+
 
 def hash_password(p, s=None):
     if not s: s = os.urandom(16)
@@ -314,7 +311,6 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        if not verify_turnstile(request.form.get('cf-turnstile-response')): return render_template('register.html', error="Captcha Inválido")
         u, p = request.form['username'], request.form['password']
         if len(u) < 2 or len(u) > 6: return render_template('register.html', error="Username: 2-6 caracteres.")
         s, h = hash_password(p)
@@ -330,7 +326,6 @@ def register():
 def index():
     lim = g.user_limits_data
     if request.method == 'POST':
-        if not verify_turnstile(request.form.get('cf-turnstile-response')): return render_template('index.html', error="Captcha", user_plan=lim, local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats)
         site, method, t = request.form.get('site'), request.form.get('method'), int(request.form.get('time'))
         
         try:
