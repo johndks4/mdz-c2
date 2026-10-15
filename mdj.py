@@ -9,6 +9,9 @@ import uuid
 import re
 import socket
 import hashlib
+import secrets
+from collections import defaultdict
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g, abort, send_from_directory
 import sqlite3
 
@@ -42,6 +45,8 @@ def _api_key():
 
 L7_LOCAL_METHODS = ['mdzdd', 'tw-mdz', 'lez', 'rapid', 'tun', 'tls', 'mdzar', 'mdz-by', 'h2', 'hby', 'fury', 'httpkill', 'mdzdestroy', 'mdzfuck', 'mdz-priv']
 active_attacks = {}
+_attack_hits = defaultdict(list)
+_CSRF_NAME = 'csrf_token'
 
 # --- AUXILIARES ---
 def get_real_ip():
@@ -230,6 +235,47 @@ def get_profile():
     elif cnt > 500: rank = {'emoji': '💎', 'title': 'Elite'}
     return {**dict(p), 'rank_info': rank}
 
+
+def issue_csrf():
+    token = secrets.token_urlsafe(32)
+    session[_CSRF_NAME] = token
+    return token
+
+def validate_csrf():
+    sent = request.form.get(_CSRF_NAME) or request.headers.get('X-CSRF-Token') or ''
+    real = session.get(_CSRF_NAME)
+    if not real or not sent:
+        return False
+    try:
+        return secrets.compare_digest(str(sent), str(real))
+    except Exception:
+        return False
+
+def validate_origin():
+    host = (request.host or '').split(':')[0].lower()
+    origin = (request.headers.get('Origin') or '').strip()
+    referer = (request.headers.get('Referer') or '').strip()
+    def _h(u):
+        try:
+            return (urlparse(u).hostname or '').lower()
+        except Exception:
+            return ''
+    if origin:
+        return _h(origin) == host
+    if referer:
+        return _h(referer) == host
+    return False  # script/curl sem Origin/Referer
+
+def rate_limit_attack(max_per_min=4):
+    ip = get_real_ip()
+    now = time.time()
+    window = [t for t in _attack_hits[ip] if now - t < 60]
+    _attack_hits[ip] = window
+    if len(window) >= max_per_min:
+        return False
+    _attack_hits[ip].append(now)
+    return True
+
 def login_required(f):
     # TEMP: login desativado — sessão guest admin automática
     def wrap(*args, **kwargs):
@@ -409,7 +455,17 @@ class NATKMonitor:
                     self.status_code = 0  # down / timeout
                 if prev_code is not None and prev_code != self.status_code:
                     self.print_log.append(f"[{self.elapsed}s] status {prev_code} → {self.status_code}")
+                    if self.status_code == 0:
+                        self.print_log.append(f"[{self.elapsed}s] ALVO DOWN — print reduzido")
                 prev_code = self.status_code
+                # se está down, não spamma check-host no log
+                if self.status_code == 0:
+                    self.host_check = {
+                        "ok": True,
+                        "summary": "ALVO DOWN (timeout/recusa)",
+                        "best_code": 0,
+                        "nodes": self.host_check.get("nodes", []) if isinstance(self.host_check, dict) else [],
+                    }
             # check-host.net a cada 15s
             if self.elapsed - last_hc >= 15 or last_hc == 0:
                 if last_hc == 0 and self.elapsed < 2:
@@ -424,8 +480,8 @@ class NATKMonitor:
                                 self.print_log.append(f"[{self.elapsed}s] check-host {prev_code} → {code}")
                             self.status_code = code
                             prev_code = code
-                        self.print_log.append(f"[{self.elapsed}s] {hc.get('summary', '')}")
-                        # trim log
+                        if self.status_code != 0:
+                            self.print_log.append(f"[{self.elapsed}s] {hc.get('summary', '')}")
                         self.print_log = self.print_log[-40:]
                     except Exception as e:
                         self.print_log.append(f"[{self.elapsed}s] hc err: {e}")
@@ -496,25 +552,50 @@ def register():
 def index():
     lim = g.user_limits_data
     if request.method == 'POST':
-        site, method, t = request.form.get('site'), request.form.get('method'), int(request.form.get('time'))
-        
         try:
-            if t > lim['max_time']: raise Exception("Tempo limite excedido")
-            if sum(1 for a in active_attacks.values() if a.user_id == session['user_id']) >= lim['concurrency']: raise Exception("Slots cheios")
-            for b in get_db().execute("SELECT pattern FROM blocked_sites").fetchall():
-                if re.search(b['pattern'], site, re.IGNORECASE): raise Exception("Alvo Bloqueado")
+            if not validate_origin():
+                raise Exception("Origem inválida")
+            if not validate_csrf():
+                raise Exception("CSRF inválido — recarregue a página")
+            if not rate_limit_attack(4):
+                raise Exception("Rate limit: aguarde 1 minuto")
 
-            method = (method or "").lower().strip()
+            site = (request.form.get('site') or '').strip()
+            method = (request.form.get('method') or '').lower().strip()
+            t = int(request.form.get('time') or 0)
+
+            if not site:
+                raise Exception("Alvo obrigatório")
+            if t > lim['max_time']:
+                raise Exception("Tempo limite excedido")
+            if sum(1 for a in active_attacks.values() if a.user_id == session['user_id']) >= lim['concurrency']:
+                raise Exception("Slots cheios")
+            for b in get_db().execute("SELECT pattern FROM blocked_sites").fetchall():
+                if re.search(b['pattern'], site, re.IGNORECASE):
+                    raise Exception("Alvo Bloqueado")
             if method not in L7_LOCAL_METHODS:
                 raise Exception("Método inválido. Use: " + ", ".join(L7_LOCAL_METHODS))
+
             threads = request.form.get('threads') or request.form.get('concs') or "1"
             atk = NATKMonitor(site, t, request.form.get('rate'), threads, method, session['user_id'], request.form.get('port'))
-            atk.start()  # chama API; levanta Exception se falhar
+            atk.start()
             active_attacks[atk.attack_id] = atk
-            get_db().execute("INSERT INTO attack_log (user_id, site, method, duration) VALUES (?, ?, ?, ?)", (session['user_id'], site, method, t)).connection.commit()
+            get_db().execute(
+                "INSERT INTO attack_log (user_id, site, method, duration) VALUES (?, ?, ?, ?)",
+                (session['user_id'], site, method, t),
+            ).connection.commit()
+            # roda CSRF a cada ataque
+            issue_csrf()
             return redirect(url_for('status_page', attack_id=atk.attack_id))
-        except Exception as e: return render_template('index.html', error=str(e), user_plan=lim, local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats)
-    return render_template('index.html', user_plan=lim, local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats)
+        except Exception as e:
+            return render_template(
+                'index.html', error=str(e), user_plan=lim,
+                local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats, csrf_token=issue_csrf(),
+            )
+    return render_template(
+        'index.html', user_plan=lim, local_methods=L7_LOCAL_METHODS,
+        real_stats=g.real_stats, csrf_token=issue_csrf(),
+    )
 
 @app.route('/status/<attack_id>')
 @login_required
@@ -531,7 +612,10 @@ def api_status(attack_id):
 @app.route('/stop/<attack_id>', methods=['POST'])
 @login_required
 def stop_attack(attack_id):
-    if attack_id in active_attacks: active_attacks[attack_id].stop()
+    if request.method == 'POST' and not validate_origin():
+        return jsonify({'success': False, 'error': 'origem'}), 403
+    if attack_id in active_attacks:
+        active_attacks[attack_id].stop()
     return jsonify({'success': True})
 
 @app.route('/list')
