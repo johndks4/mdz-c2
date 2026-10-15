@@ -2,31 +2,25 @@
 {% block title %}Painel · MDZ C2{% endblock %}
 {% block content %}
 <div class="stat-row">
-  <div class="stat"><div class="v">{{ user_plan.max_time }}s</div><div class="l">Tempo máx</div></div>
-  <div class="stat"><div class="v">{{ user_plan.concurrency }}</div><div class="l">Slots</div></div>
-  <div class="stat"><div class="v">{{ user_plan.max_rate }}</div><div class="l">Rate máx</div></div>
-  <div class="stat"><div class="v" style="color:var(--ok)">API</div><div class="l">C2 remoto</div></div>
+  <div class="stat"><div class="v">{{ user_plan.max_time }}s</div><div class="l">tempo máx</div></div>
+  <div class="stat"><div class="v">{{ user_plan.concurrency }}</div><div class="l">slots</div></div>
+  <div class="stat"><div class="v">{{ user_plan.max_rate }}</div><div class="l">rate</div></div>
+  <div class="stat"><div class="v" style="color:var(--ok);font-size:1rem">C2</div><div class="l">api remota</div></div>
 </div>
 
-<div class="card" style="max-width:640px">
+<div class="card" style="max-width:560px">
   <h2 class="card-title"><span class="dot"></span> NOVA OFENSIVA</h2>
-
-  {% if error %}
-  <div class="alert alert-err">{{ error }}</div>
-  {% endif %}
-
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
   <form method="POST">
     <div style="margin-bottom:16px">
-      <label>Alvo (URL / host)</label>
+      <label>Alvo</label>
       <input class="cyber-input" name="site" placeholder="https://exemplo.com" required>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div>
         <label>Método</label>
         <select name="method" class="cyber-input" required>
-          {% for m in local_methods %}
-          <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
+          {% for m in local_methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
         </select>
       </div>
       <div>
@@ -34,19 +28,17 @@
         <input class="cyber-input" type="number" name="time" min="1" max="{{ user_plan.max_time }}" value="60" required>
       </div>
     </div>
-    <div class="grid-2" style="margin-bottom:20px">
+    <div class="grid-2" style="margin-bottom:22px">
       <div>
-        <label>Threads / Concs</label>
+        <label>Threads</label>
         <input class="cyber-input" type="number" name="threads" min="1" max="{{ user_plan.concurrency }}" value="1">
       </div>
       <div>
-        <label>Rate (legado)</label>
+        <label>Rate</label>
         <input class="cyber-input" type="number" name="rate" value="64">
       </div>
-    </div>
     </div>
     <button type="submit" class="cyber-btn" style="width:100%">INJETAR OGIVA</button>
   </form>
 </div>
-
 {% endblock %}

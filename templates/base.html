@@ -4,56 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}MDZ C2{% endblock %}</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
 :root{
-  --bg:#07070a; --panel:#0d0d12; --panel2:#12121a; --border:#1e1e2a;
-  --red:#ff2d55; --red-dim:#ff2d5533; --text:#e8e8ef; --muted:#6b6b7b;
-  --ok:#00e676; --warn:#ffd600;
+  --bg:#050507; --panel:rgba(16,16,22,.85); --panel2:#0e0e14; --border:#1c1c28;
+  --red:#ff2d55; --red2:#ff4d6d; --glow:#ff2d5540; --text:#eeeef5; --muted:#6a6a7c;
+  --ok:#3dff9a; --warn:#ffc14d; --down:#ff4d4d;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;display:flex}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Syne,system-ui,sans-serif;min-height:100vh;display:flex}
 body::before{content:"";position:fixed;inset:0;background:
-  radial-gradient(ellipse 80% 50% at 20% -10%,#ff2d5522,transparent),
-  radial-gradient(ellipse 60% 40% at 100% 0%,#3d1a4a22,transparent);
+  radial-gradient(ellipse 90% 60% at 10% -20%,#ff2d5528,transparent 55%),
+  radial-gradient(ellipse 70% 50% at 100% 0%,#5b2d9a18,transparent 50%),
+  linear-gradient(180deg,#08080c 0%,#050507 100%);
   pointer-events:none;z-index:0}
-.sidebar{width:240px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:20}
-.sidebar-header{padding:28px 20px;border-bottom:1px solid var(--border);text-align:center}
-.sidebar-header h2{margin:0;font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:800;letter-spacing:-1px}
-.sidebar-header h2 span{color:var(--red)}
-.nav-links{flex:1;padding:16px 12px;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;color:var(--muted);text-decoration:none;border-radius:10px;margin-bottom:4px;font-weight:600;font-size:.88rem;transition:.2s;border:1px solid transparent}
-.nav-item:hover,.nav-item.active{background:var(--red-dim);color:#fff;border-color:#ff2d5544}
-.nav-item i{font-size:1.2rem}
-.main{margin-left:240px;flex:1;padding:32px 40px;position:relative;z-index:1;min-height:100vh}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:0 8px 32px #0006}
-.card-title{font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:700;margin:0 0 20px;display:flex;align-items:center;gap:10px}
-.card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red)}
-label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;font-weight:600}
-.cyber-input,select.cyber-input,textarea.cyber-input{
-  width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:10px;
-  padding:12px 14px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.9rem;
+.sidebar{width:232px;background:rgba(10,10,14,.92);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:30;backdrop-filter:blur(12px)}
+.sidebar-header{padding:28px 18px 22px;border-bottom:1px solid var(--border)}
+.sidebar-header h2{margin:0;font-size:1.55rem;font-weight:800;letter-spacing:-.04em}
+.sidebar-header h2 span{color:var(--red);text-shadow:0 0 24px var(--glow)}
+.sidebar-header p{margin:6px 0 0;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
+.nav-links{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;color:var(--muted);text-decoration:none;border-radius:11px;margin-bottom:3px;font-weight:700;font-size:.86rem;transition:.18s;border:1px solid transparent}
+.nav-item:hover{background:var(--glow);color:#fff;border-color:#ff2d5533}
+.nav-item i{font-size:1.15rem;opacity:.85}
+.main{margin-left:232px;flex:1;padding:36px 44px;position:relative;z-index:1;min-height:100vh}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:28px;backdrop-filter:blur(16px);box-shadow:0 12px 40px #0005}
+.card-title{font-size:1.05rem;font-weight:800;margin:0 0 22px;display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 14px var(--red);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.cyber-input,select.cyber-input{
+  width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:11px;
+  padding:13px 15px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.88rem;
   outline:none;transition:.2s
 }
-.cyber-input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-dim)}
+.cyber-input:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--glow)}
 .cyber-btn{
-  background:linear-gradient(135deg,var(--red),#c41840);color:#fff;border:none;border-radius:10px;
-  padding:13px 22px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:Inter,sans-serif;
-  transition:.2s;letter-spacing:.02em
+  background:linear-gradient(135deg,var(--red),#c41840);color:#fff;border:none;border-radius:11px;
+  padding:13px 22px;font-weight:800;font-size:.88rem;cursor:pointer;font-family:Syne,sans-serif;
+  transition:.2s;letter-spacing:.03em
 }
-.cyber-btn:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 20px #ff2d5544}
+.cyber-btn:hover{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 8px 28px var(--glow)}
 .cyber-btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
 .cyber-btn.ghost:hover{border-color:var(--red);color:#fff}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.alert{padding:12px 16px;border-radius:10px;margin-bottom:18px;font-size:.9rem;border:1px solid}
+.alert{padding:12px 16px;border-radius:11px;margin-bottom:16px;font-size:.88rem;border:1px solid;font-family:'JetBrains Mono',monospace}
 .alert-err{background:#2a0a12;border-color:#5a1a28;color:#ff8a9a}
 .alert-ok{background:#0a2a18;border-color:#1a5a38;color:#7dffb3}
-.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
-.stat{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px}
-.stat .v{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700}
-.stat .l{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:26px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;backdrop-filter:blur(12px)}
+.stat .v{font-family:'JetBrains Mono',monospace;font-size:1.35rem;font-weight:700}
+.stat .l{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:5px;font-family:'JetBrains Mono',monospace}
+.mono{font-family:'JetBrains Mono',monospace}
 @media(max-width:900px){
   .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border)}
   .main{margin-left:0;padding:20px}
@@ -65,17 +69,18 @@ label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08
 </head>
 <body>
 <aside class="sidebar">
-  <div class="sidebar-header"><h2>MDZ <span>C2</span></h2></div>
-    <nav class="nav-links">
+  <div class="sidebar-header">
+    <h2>MDZ <span>C2</span></h2>
+    <p>remote nucleus</p>
+  </div>
+  <nav class="nav-links">
     <a class="nav-item" href="/"><i class="material-icons">rocket_launch</i> Painel</a>
-    <a class="nav-item" href="/list"><i class="material-icons">list_alt</i> Ativos</a>
+    <a class="nav-item" href="/list"><i class="material-icons">bolt</i> Ativos</a>
     <a class="nav-item" href="/ranking"><i class="material-icons">emoji_events</i> Ranking</a>
     <a class="nav-item" href="/proof/feed"><i class="material-icons">photo_library</i> Proofs</a>
     <a class="nav-item" href="/profile"><i class="material-icons">person</i> Perfil</a>
   </nav>
 </aside>
-<main class="main">
-  {% block content %}{% endblock %}
-</main>
+<main class="main">{% block content %}{% endblock %}</main>
 </body>
 </html>

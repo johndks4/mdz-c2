@@ -1,29 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Status · MDZ C2{% endblock %}
+{% block title %}Live · MDZ C2{% endblock %}
 {% block content %}
-<div class="card" style="max-width:760px">
-  <h2 class="card-title"><span class="dot"></span> ATAQUE EM CURSO</h2>
-  <div class="grid-2" style="font-family:'JetBrains Mono',monospace;font-size:.88rem;gap:20px">
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ID</div><strong>{{ status.attack_id }}</strong></div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">MÉTODO</div><strong style="color:var(--red)">{{ status.method }}</strong></div>
-    <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ALVO</div><strong>{{ status.site }}</strong></div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">IP</div><strong>{{ status.target_ip }}</strong></div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">HTTP STATUS</div><strong id="sc" style="font-size:1.2rem;color:var(--ok)">{{ status.last_status_code }}</strong></div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">TEMPO</div><strong id="tl">{{ status.time_left }}s</strong> / {{ status.time_total }}s</div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">NODE C2</div><strong id="ns">{{ status.node_status or '—' }}</strong></div>
-    <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">API</div><strong id="am" style="color:var(--ok)">{{ status.api_message or '—' }}</strong></div>
-  </div>
-  <div style="margin-top:22px;height:6px;background:#1a1a24;border-radius:4px;overflow:hidden">
-    <div id="bar" style="height:100%;width:0%;background:var(--red);transition:width .35s"></div>
+<div style="max-width:820px">
+  <div class="stat-row">
+    <div class="stat"><div class="v" id="sc" style="color:var(--ok)">{{ status.last_status_code }}</div><div class="l">HTTP status</div></div>
+    <div class="stat"><div class="v" id="tl">{{ status.time_left }}s</div><div class="l">restante</div></div>
+    <div class="stat"><div class="v mono" style="font-size:1rem;color:var(--red)">{{ status.method }}</div><div class="l">método</div></div>
+    <div class="stat"><div class="v" id="alive" style="font-size:1rem;color:var(--ok)">LIVE</div><div class="l">monitor</div></div>
   </div>
 
-  <h3 style="margin:28px 0 12px;font-size:.85rem;color:var(--muted);letter-spacing:.06em">CHECK-HOST.NET</h3>
-  <div id="hc" style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:.8rem;min-height:48px;color:var(--muted)">aguardando nodes…</div>
+  <div class="card" style="margin-bottom:18px">
+    <h2 class="card-title"><span class="dot"></span> OFENSIVA</h2>
+    <div class="grid-2 mono" style="font-size:.84rem;gap:18px">
+      <div><div style="color:var(--muted);font-size:.65rem;margin-bottom:4px">ID</div><strong>{{ status.attack_id }}</strong></div>
+      <div><div style="color:var(--muted);font-size:.65rem;margin-bottom:4px">NODE C2</div><strong id="ns">{{ status.node_status or '—' }}</strong></div>
+      <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.65rem;margin-bottom:4px">ALVO</div><strong style="word-break:break-all">{{ status.site }}</strong></div>
+      <div><div style="color:var(--muted);font-size:.65rem;margin-bottom:4px">IP</div><strong>{{ status.target_ip }}</strong></div>
+      <div><div style="color:var(--muted);font-size:.65rem;margin-bottom:4px">API</div><strong id="am" style="color:var(--ok);font-size:.8rem">{{ status.api_message or '—' }}</strong></div>
+    </div>
+    <div style="margin-top:20px;height:6px;background:#12121a;border-radius:4px;overflow:hidden">
+      <div id="bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--red),#ff6b8a);transition:width .4s"></div>
+    </div>
+  </div>
 
-  <h3 style="margin:28px 0 12px;font-size:.85rem;color:var(--muted);letter-spacing:.06em">PRINT / LOG</h3>
-  <pre id="plog" style="background:#050508;border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:.78rem;max-height:220px;overflow:auto;margin:0;color:#9f9">—</pre>
+  <div class="card" style="margin-bottom:18px">
+    <h2 class="card-title"><span class="dot"></span> CHECK-HOST · LIVE</h2>
+    <p style="margin:0 0 12px;font-size:.75rem;color:var(--muted)" class="mono">atualiza ~15s até o fim do ataque</p>
+    <div id="hc" class="mono" style="font-size:.78rem;color:var(--muted)">aguardando primeira rodada…</div>
+  </div>
 
-  <div style="margin-top:22px;display:flex;gap:10px">
+  <div class="card" style="margin-bottom:18px">
+    <h2 class="card-title"><span class="dot"></span> PRINT</h2>
+    <pre id="plog" class="mono" style="background:#030306;border:1px solid var(--border);border-radius:12px;padding:14px;font-size:.75rem;max-height:260px;overflow:auto;margin:0;color:#8f8;line-height:1.55;white-space:pre-wrap">—</pre>
+  </div>
+
+  <div style="display:flex;gap:10px">
     <form action="{{ url_for('stop_attack', attack_id=status.attack_id) }}" method="POST">
       <button type="submit" class="cyber-btn" style="background:#3a1218">STOP</button>
     </form>
@@ -32,24 +43,44 @@
 </div>
 <script>
 const aid="{{ status.attack_id }}", total={{ status.time_total|int }};
+function codeColor(c){
+  c=parseInt(c,10);
+  if(!c||c===0) return 'var(--down)';
+  if(c>=200&&c<400) return 'var(--ok)';
+  if(c>=400&&c<500) return 'var(--warn)';
+  return 'var(--down)';
+}
 function renderHC(hc){
-  if(!hc||!hc.nodes||!hc.nodes.length){document.getElementById('hc').textContent=hc&&hc.summary?hc.summary:'aguardando nodes…';return}
-  let h='<div style="margin-bottom:8px;color:var(--ok)">'+ (hc.summary||'') +'</div>';
-  hc.nodes.slice(0,12).forEach(n=>{
-    h+='<div style="display:flex;gap:12px;padding:4px 0;border-bottom:1px solid #1a1a24"><span style="color:#666;min-width:120px">'+n.node+'</span><span style="color:'+(n.code>=200&&n.code<400?'var(--ok)':'var(--red)')+'">'+n.code+'</span><span style="color:#555">'+ (n.ip||'') +'</span></div>';
+  const el=document.getElementById('hc');
+  if(!hc){el.textContent='aguardando…';return}
+  if(!hc.nodes||!hc.nodes.length){el.innerHTML='<span style="color:var(--muted)">'+ (hc.summary||'sem nodes') +'</span>';return}
+  let h='<div style="margin-bottom:10px;color:var(--text)">'+ (hc.summary||'') +'</div>';
+  h+='<div style="display:grid;gap:4px">';
+  hc.nodes.slice(0,14).forEach(n=>{
+    const col=codeColor(n.code);
+    const st=(!n.code||n.code===0)?'DOWN':n.code;
+    h+='<div style="display:grid;grid-template-columns:140px 64px 1fr;gap:10px;padding:6px 8px;background:var(--panel2);border-radius:8px;border:1px solid var(--border)">';
+    h+='<span style="color:#666;overflow:hidden;text-overflow:ellipsis">'+n.node+'</span>';
+    h+='<span style="color:'+col+';font-weight:700">'+st+'</span>';
+    h+='<span style="color:#444">'+ (n.ip||'') +'</span></div>';
   });
-  document.getElementById('hc').innerHTML=h;
+  h+='</div>';
+  el.innerHTML=h;
 }
 function tick(){
   fetch("/api/status/"+aid).then(r=>r.json()).then(d=>{
-    document.getElementById("sc").textContent=d.last_status_code;
+    const sc=document.getElementById("sc");
+    sc.textContent=d.last_status_code;
+    sc.style.color=codeColor(d.last_status_code);
     document.getElementById("tl").textContent=(d.time_left||0)+"s";
+    document.getElementById("alive").textContent=d.is_running?'LIVE':'END';
+    document.getElementById("alive").style.color=d.is_running?'var(--ok)':'var(--muted)';
     if(d.node_status)document.getElementById("ns").textContent=d.node_status;
     if(d.api_message)document.getElementById("am").textContent=d.api_message;
     if(d.print_log&&d.print_log.length)document.getElementById("plog").textContent=d.print_log.join("\\n");
     if(d.host_check)renderHC(d.host_check);
-    document.getElementById("bar").style.width=Math.min(100,((d.time_elapsed||0)/total)*100)+"%";
-    if(d.is_running) setTimeout(tick,1200); else document.getElementById("tl").textContent="0s";
+    document.getElementById("bar").style.width=Math.min(100,((d.time_elapsed||0)/Math.max(1,total))*100)+"%";
+    if(d.is_running) setTimeout(tick,1000);
   }).catch(()=>setTimeout(tick,2000));
 }
 tick();

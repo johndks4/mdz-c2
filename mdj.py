@@ -394,15 +394,43 @@ class NATKMonitor:
             raise
 
     def loop(self):
+        # monitora alvo até o fim: HTTP direto + check-host a cada ~15s
+        last_hc = 0
+        prev_code = None
         while self.is_running and self.elapsed < self.time:
             time.sleep(1)
             self.elapsed += 1
-            if self.elapsed % 5 == 0:
+            # ping direto a cada 3s
+            if self.elapsed % 3 == 0:
                 try:
-                    url = self.site if "http" in self.site else "http://" + self.site
-                    self.status_code = requests.get(url, timeout=2).status_code
+                    url = self.site if "http" in str(self.site) else "http://" + self.site
+                    self.status_code = requests.get(url, timeout=3, allow_redirects=True).status_code
                 except Exception:
-                    self.status_code = 0
+                    self.status_code = 0  # down / timeout
+                if prev_code is not None and prev_code != self.status_code:
+                    self.print_log.append(f"[{self.elapsed}s] status {prev_code} → {self.status_code}")
+                prev_code = self.status_code
+            # check-host.net a cada 15s
+            if self.elapsed - last_hc >= 15 or last_hc == 0:
+                if last_hc == 0 and self.elapsed < 2:
+                    pass  # _run_host_check já roda no start
+                elif self.elapsed >= 2:
+                    try:
+                        hc = check_host_http(self.site)
+                        self.host_check = hc
+                        if hc.get("best_code") is not None:
+                            code = hc["best_code"]
+                            if prev_code is not None and code != prev_code:
+                                self.print_log.append(f"[{self.elapsed}s] check-host {prev_code} → {code}")
+                            self.status_code = code
+                            prev_code = code
+                        self.print_log.append(f"[{self.elapsed}s] {hc.get('summary', '')}")
+                        # trim log
+                        self.print_log = self.print_log[-40:]
+                    except Exception as e:
+                        self.print_log.append(f"[{self.elapsed}s] hc err: {e}")
+                last_hc = self.elapsed
+        self.print_log.append(f"[fim] ataque encerrado · último HTTP {self.status_code}")
         self.stop()
 
     def _run_host_check(self):
