@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block header_title %}PENDING PROOFS REVIEW{% endblock %}
+{% block content %}
+<div class="attack-panel">
+    {% if not pending_feedbacks %}
+    <p style="color: #666; text-align: center; padding: 40px;">Não existem provas pendentes de revisão.</p>
+    {% else %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+        {% for f in pending_feedbacks %}
+        <div style="background: #111; border-radius: 12px; padding: 20px; border: 1px solid #222;">
+            <div style="margin-bottom: 15px;">
+                <span style="color: var(--color-primary); font-weight: 800;">ENVIADO POR: {{ f.display_name }}</span>
+            </div>
+            <img src="/static/uploads/{{ f.image_filename }}" style="width: 100%; border-radius: 4px; margin-bottom: 15px;">
+            <p style="font-size: 0.9rem; color: #ccc;"><b>Alvo:</b> {{ f.site_affected }}</p>
+            <p style="font-size: 0.8rem; color: #666;">{{ f.notes }}</p>
+            
+            <form method="POST" style="display: flex; gap: 10px; margin-top: 20px;">
+                <input type="hidden" name="feedback_id" value="{{ f.id }}">
+                <button type="submit" name="action" value="approve" class="btn-fire" style="background: #080; margin: 0; padding: 10px;">APROVAR</button>
+                <button type="submit" name="action" value="reject" class="btn-fire" style="background: #800; margin: 0; padding: 10px;">ELIMINAR</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

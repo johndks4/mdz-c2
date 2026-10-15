@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Status · MDZ C2{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px">
+  <h2 class="card-title"><span class="dot"></span> ATAQUE EM CURSO</h2>
+  <div class="grid-2" style="font-family:'JetBrains Mono',monospace;font-size:.88rem;gap:20px">
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ID</div><strong>{{ status.attack_id }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">MÉTODO</div><strong style="color:var(--red)">{{ status.method }}</strong></div>
+    <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ALVO</div><strong>{{ status.site }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">IP</div><strong>{{ status.target_ip }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">HTTP</div><strong id="sc">{{ status.last_status_code }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">TEMPO</div><strong id="tl">{{ status.time_left }}s</strong> / {{ status.time_total }}s</div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">NODE</div><strong id="ns">{{ status.node_status or '—' }}</strong></div>
+    <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">API</div><strong id="am" style="color:var(--ok)">{{ status.api_message or '—' }}</strong></div>
+  </div>
+  <div style="margin-top:22px;height:6px;background:#1a1a24;border-radius:4px;overflow:hidden">
+    <div id="bar" style="height:100%;width:0%;background:var(--red);transition:width .35s"></div>
+  </div>
+  <div style="margin-top:22px;display:flex;gap:10px">
+    <form action="{{ url_for('stop_attack', attack_id=status.attack_id) }}" method="POST">
+      <button type="submit" class="cyber-btn" style="background:#3a1218">STOP</button>
+    </form>
+    <a href="{{ url_for('index') }}" class="cyber-btn ghost" style="text-decoration:none;display:inline-flex;align-items:center">NOVO</a>
+  </div>
+</div>
+<script>
+const aid="{{ status.attack_id }}", total={{ status.time_total|int }};
+function tick(){
+  fetch("/api/status/"+aid).then(r=>r.json()).then(d=>{
+    if(!d.is_running){document.getElementById("tl").textContent="0s";document.getElementById("bar").style.width="100%";return}
+    document.getElementById("tl").textContent=(d.time_left||0)+"s";
+    document.getElementById("sc").textContent=d.last_status_code;
+    if(d.node_status)document.getElementById("ns").textContent=d.node_status;
+    if(d.api_message)document.getElementById("am").textContent=d.api_message;
+    document.getElementById("bar").style.width=Math.min(100,((d.time_elapsed||0)/total)*100)+"%";
+    setTimeout(tick,1000);
+  }).catch(()=>setTimeout(tick,2000));
+}
+tick();
+</script>
+{% endblock %}

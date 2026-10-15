@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block header_title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="animation: slideUp 0.6s ease;">
+    
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 15px;">
+        <div>
+            <h2 style="color: #fff; margin: 0; font-size: 1.5rem;">Base de Dados</h2>
+            <p style="color: #666; margin: 5px 0 0; font-size: 0.8rem;">Gerenciamento total de clientes.</p>
+        </div>
+
+        <form style="display: flex; gap: 10px; background: #0a0a0a; padding: 5px; border: 1px solid #222; border-radius: 10px;">
+            <input type="text" name="search" placeholder="Buscar usuário..." value="{{ search_query }}" 
+                   style="background: transparent; border: none; padding: 10px 15px; color: #fff; outline: none; font-family: 'Inter', sans-serif;">
+            <button style="background: #222; color: #fff; border: 1px solid #333; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.3s;">
+                <i class="material-icons" style="font-size: 1.2rem; vertical-align: middle;">search</i>
+            </button>
+        </form>
+    </div>
+
+    <div style="background: #0a0a0a; border: 1px solid #222; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                <thead>
+                    <tr style="background: #111; border-bottom: 1px solid #222;">
+                        <th style="padding: 18px; text-align: left; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;">ID</th>
+                        <th style="padding: 18px; text-align: left; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;">USUÁRIO</th>
+                        <th style="padding: 18px; text-align: left; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;">PLANO (SEC / SLOT)</th>
+                        <th style="padding: 18px; text-align: left; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;">STATUS</th>
+                        <th style="padding: 18px; text-align: right; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr style="border-bottom: 1px solid #151515; transition: 0.2s; background: rgba(255,255,255,0.01);">
+                        <td style="padding: 18px; color: #444; font-family: monospace;">#{{ u.id }}</td>
+                        
+                        <td style="padding: 18px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 35px; height: 35px; background: #151515; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.9em; border: 1px solid #333;">
+                                    {{ u.username[0]|upper }}
+                                </div>
+                                <span style="color: #fff; font-weight: 600;">
+                                    {{ u.username }} 
+                                    {% if u.is_admin %}
+                                    <i class="material-icons" style="font-size: 0.9em; color: gold; vertical-align: middle;" title="Admin">verified</i>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td style="padding: 18px;">
+                            {% if u.max_time %}
+                                <span style="background: rgba(46, 204, 113, 0.1); color: #2ecc71; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 700; border: 1px solid rgba(46, 204, 113, 0.2);">
+                                    VIP: {{ u.max_time }}s / {{ u.concurrency }}
+                                </span>
+                            {% else %}
+                                <span style="background: #151515; color: #666; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 700; border: 1px solid #333;">
+                                    GLOBAL
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 18px;">
+                            {% if u.is_banned %}
+                                <span style="color: #ff2a2a; font-weight: 800; display: flex; align-items: center; gap: 5px; font-size: 0.8em;">
+                                    <span style="width: 6px; height: 6px; background: #ff2a2a; border-radius: 50%;"></span> BANIDO
+                                </span>
+                            {% else %}
+                                <span style="color: #2ecc71; font-weight: 800; display: flex; align-items: center; gap: 5px; font-size: 0.8em;">
+                                    <span style="width: 6px; height: 6px; background: #2ecc71; border-radius: 50%;"></span> ATIVO
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 18px; text-align: right;">
+                            <button onclick="openEditModal('{{ u.id }}', '{{ u.username }}', '{{ u.max_time or 0 }}', '{{ u.concurrency or 0 }}', '{{ u.max_rate or 0 }}')" 
+                                    class="action-btn edit" title="Editar Plano">
+                                <i class="material-icons">edit</i>
+                            </button>
+
+                            {% if not u.is_banned %}
+                            <a href="/admin/ban/{{ u.id }}" class="action-btn ban" title="Banir Usuário">
+                                <i class="material-icons">block</i>
+                            </a>
+                            {% else %}
+                            <a href="/admin/unban/{{ u.id }}" class="action-btn unban" title="Remover Banimento">
+                                <i class="material-icons">settings_backup_restore</i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="padding: 40px; text-align: center; color: #666;">Nenhum usuário encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>EDITAR USUÁRIO</h3>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+        </div>
+        
+        <div style="margin-bottom: 25px; text-align: center;">
+            <span style="color: #666; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;">Alvo Selecionado</span>
+            <div id="modalUser" style="color: var(--color-primary); font-size: 1.8rem; font-weight: 800; margin-top: 5px;">USERNAME</div>
+        </div>
+        
+        <form id="editForm" method="POST" action="">
+            <input type="hidden" name="search_context" value="{{ search_query }}">
+            
+            <div class="input-wrapper">
+                <label>MAX TIME (s)</label>
+                <input type="number" id="modalTime" name="max_time" class="cyber-input" placeholder="0 = Global">
+                <div class="hint">Tempo máximo de ataque. 0 = Padrão.</div>
+            </div>
+
+            <div class="input-wrapper">
+                <label>CONCURRENCY (Slots)</label>
+                <input type="number" id="modalConc" name="concurrency" class="cyber-input" placeholder="0 = Global">
+                <div class="hint">Ataques simultâneos permitidos.</div>
+            </div>
+
+            <div class="input-wrapper">
+                <label>MAX RATE (PPS Limit)</label>
+                <input type="number" id="modalRate" name="max_rate" class="cyber-input" placeholder="0 = Global">
+                <div class="hint">Limite de requisições por segundo.</div>
+            </div>
+
+            <button type="submit" class="btn-save">
+                <i class="material-icons">save</i> SALVAR ALTERAÇÕES
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Botões da Tabela */
+    .action-btn {
+        background: transparent; border: 1px solid #333; color: #aaa;
+        width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: 0.2s; text-decoration: none; margin-left: 5px;
+    }
+    .action-btn i { font-size: 1.1rem; }
+    
+    .action-btn.edit:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
+    .action-btn.ban:hover { border-color: #ff2a2a; color: #ff2a2a; background: rgba(255, 42, 42, 0.1); }
+    .action-btn.unban:hover { border-color: #2ecc71; color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
+
+    /* Modal Backdrop */
+    .modal {
+        display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
+        width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* Modal Content */
+    .modal-content {
+        background: #0a0a0a; border: 1px solid #222; margin: 8vh auto; padding: 30px;
+        width: 90%; max-width: 400px; border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;
+        animation: slideDown 0.3s ease;
+    }
+
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px;
+    }
+    .modal-header h3 { margin: 0; color: #fff; font-size: 1.1rem; letter-spacing: 1px; }
+    .close-modal { color: #666; font-size: 24px; cursor: pointer; transition: 0.3s; }
+    .close-modal:hover { color: #fff; }
+
+    /* Inputs Modernos */
+    .input-wrapper { margin-bottom: 20px; }
+    .input-wrapper label {
+        display: block; color: #888; font-size: 0.7rem; font-weight: 800;
+        margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .cyber-input {
+        width: 100%; background: #050505; border: 1px solid #333; padding: 14px 15px;
+        color: #fff; border-radius: 10px; font-family: 'Inter', sans-serif; box-sizing: border-box;
+        transition: 0.3s; font-size: 1rem;
+    }
+    .cyber-input:focus {
+        border-color: var(--color-primary); outline: none; box-shadow: 0 0 15px rgba(255, 42, 42, 0.1);
+        background: #080808;
+    }
+    .hint { font-size: 0.7rem; color: #444; margin-top: 6px; }
+
+    /* Botão Salvar */
+    .btn-save {
+        width: 100%; padding: 16px; border: none; border-radius: 10px;
+        background: linear-gradient(90deg, var(--color-primary), #b00);
+        color: #fff; font-weight: 800; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        transition: 0.3s; margin-top: 10px; letter-spacing: 1px;
+    }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255, 42, 42, 0.3); }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+
+<script>
+    function openEditModal(id, username, time, conc, rate) {
+        document.getElementById('modalUser').innerText = username;
+        document.getElementById('modalTime').value = time;
+        document.getElementById('modalConc').value = conc;
+        document.getElementById('modalRate').value = rate;
+        
+        // Configura a ação do formulário para a rota correta
+        document.getElementById('editForm').action = "/admin/user/edit/" + id;
+        
+        document.getElementById('editModal').style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = "none";
+    }
+    
+    // Fechar ao clicar fora
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('editModal')) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro | MDZ C2</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style>
+        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .login-box { background: #0a0a0a; padding: 40px; border-radius: 20px; border: 1px solid #222; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .styled-input { width: 100%; padding: 15px; background: #0f0f0f; border: 1px solid #222; border-radius: 8px; color: #fff; box-sizing: border-box; margin-bottom: 20px; }
+        .btn-login { width: 100%; padding: 15px; background: #ff2a2a; border: none; border-radius: 8px; color: #fff; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-login:hover { background: #d00; transform: scale(1.02); }
+        a { color: #ff2a2a; text-decoration: none; }
+        .error-msg { background: rgba(255, 68, 68, 0.1); color: #ff4444; padding: 10px; border-radius: 8px; font-size: 0.9em; margin-bottom: 20px; border: 1px solid #ff4444; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2 style="margin: 0 0 30px;">CRIAR CONTA</h2>
+        
+        {% if error %}
+        <div class="error-msg">
+            <i class="material-icons" style="vertical-align: bottom; font-size: 1.1em;">error</i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            <label style="display:block; text-align:left; color:#666; font-size:0.8em; margin-bottom:5px;">USUÁRIO (2-6 LETRAS)</label>
+            <input type="text" name="username" class="styled-input" placeholder="User" required minlength="2" maxlength="6">
+            
+            <label style="display:block; text-align:left; color:#666; font-size:0.8em; margin-bottom:5px;">SENHA</label>
+            <input type="password" name="password" class="styled-input" placeholder="••••••" required>
+
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAACH6BR5CqL8Z_z99" data-theme="dark" style="margin-bottom: 20px;"></div>
+
+            <button type="submit" class="btn-login">REGISTRAR</button>
+        </form>
+        
+        <p style="margin-top: 20px; font-size: 0.8em; color: #666;">
+            Já tem conta? <a href="/login">Login</a>
+        </p>
+    </div>
+</body>
+</html>

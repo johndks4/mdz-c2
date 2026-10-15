@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block header_title %}GLOBAL ATTACK LIMITS{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; animation: fadeIn 0.5s ease;">
+    <div class="attack-panel">
+        <h3 style="color: var(--color-primary); margin-bottom: 30px;">CONFIGURAÇÕES DE POTÊNCIA</h3>
+        <form method="POST">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="cyber-input-group">
+                    <span class="cyber-label">TEMPO MÁXIMO (S)</span>
+                    <input type="number" name="max_time" class="cyber-input" value="{{ global_limits.max_time }}">
+                </div>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">RATE MÁXIMO</span>
+                    <input type="number" name="max_rate" class="cyber-input" value="{{ global_limits.max_rate }}">
+                </div>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">THREADS MÁXIMAS</span>
+                    <input type="number" name="max_threads" class="cyber-input" value="{{ global_limits.max_threads }}">
+                </div>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">COOLDOWN (S)</span>
+                    <input type="number" name="cooldown" class="cyber-input" value="{{ global_limits.cooldown }}">
+                </div>
+            </div>
+            <button type="submit" class="btn-fire" style="margin-top: 30px;">ATUALIZAR LIMITES GLOBAIS</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

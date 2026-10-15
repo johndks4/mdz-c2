@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Chat Global{% endblock %}
+{% block header_title %}CANAL DE COMUNICAÇÃO{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="height: calc(100vh - 140px); min-height: 500px; animation: slideUp 0.6s ease;">
+    
+    <div class="chat-interface">
+        
+        <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="status-dot"></div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1rem; color: #fff;">GLOBAL NET</h3>
+                    <span style="font-size: 0.7rem; color: #666; font-family: monospace;">ENCRYPTED // LOGGED</span>
+                </div>
+            </div>
+            <div style="font-size: 0.7rem; color: #444;">V.2.0</div>
+        </div>
+
+        <div class="chat-window" id="chatWindow">
+            <div style="text-align: center; padding: 40px; color: #444;">
+                <div class="loader"></div>
+                <p style="font-size: 0.8rem; margin-top: 10px;">ESTABELECENDO CONEXÃO...</p>
+            </div>
+        </div>
+
+        <form class="chat-input-area" id="chatForm">
+            <input type="text" id="msgInput" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off" maxlength="200">
+            <button type="submit" class="btn-send">
+                <i class="material-icons">send</i>
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<style>
+    /* Layout Principal */
+    .chat-interface {
+        display: flex; flex-direction: column;
+        height: 100%;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        position: relative;
+    }
+
+    /* Header */
+    .chat-header {
+        padding: 15px 20px;
+        background: #0f0f0f;
+        border-bottom: 1px solid #222;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .status-dot {
+        width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;
+        box-shadow: 0 0 10px #2ecc71; animation: pulse 2s infinite;
+    }
+
+    /* Janela de Mensagens */
+    .chat-window {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background: radial-gradient(circle at center, #0e0e0e 0%, #050505 100%);
+    }
+
+    /* Balões de Mensagem */
+    .message {
+        max-width: 70%;
+        padding: 10px 15px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        position: relative;
+        animation: fadeIn 0.3s ease;
+        line-height: 1.4;
+    }
+    
+    .message-header {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 0.7rem; font-weight: 800; margin-bottom: 4px;
+    }
+
+    /* Mensagens de Outros */
+    .message.left {
+        align-self: flex-start;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        color: #ddd;
+        border-top-left-radius: 0;
+    }
+    .message.left .user-name { color: #888; }
+
+    /* Minhas Mensagens */
+    .message.right {
+        align-self: flex-end;
+        background: rgba(255, 42, 42, 0.1);
+        border: 1px solid rgba(255, 42, 42, 0.3);
+        color: #fff;
+        border-top-right-radius: 0;
+    }
+    .message.right .user-name { color: var(--color-primary); }
+
+    /* Mensagem de Admin */
+    .message.admin {
+        border-color: gold;
+        background: rgba(255, 215, 0, 0.05);
+    }
+    .message.admin .user-name { color: gold !important; }
+
+    .timestamp { font-size: 0.65rem; color: #555; margin-left: 8px; font-family: monospace; }
+
+    /* Input Area */
+    .chat-input-area {
+        padding: 15px;
+        background: #0f0f0f;
+        border-top: 1px solid #222;
+        display: flex; gap: 10px;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: #050505;
+        border: 1px solid #333;
+        padding: 12px 15px;
+        border-radius: 10px;
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        outline: none; transition: 0.3s;
+    }
+    .chat-input:focus { border-color: var(--color-primary); }
+
+    .btn-send {
+        background: var(--color-primary);
+        border: none;
+        color: #fff;
+        width: 45px; height: 45px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.3s;
+    }
+    .btn-send:hover { background: #d00; transform: scale(1.05); }
+
+    /* Loader */
+    .loader { width: 20px; height: 20px; border: 2px solid #333; border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s infinite; margin: 0 auto; }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script>
+    const chatWindow = document.getElementById('chatWindow');
+    const chatForm = document.getElementById('chatForm');
+    const msgInput = document.getElementById('msgInput');
+    const currentUser = "{{ session.username }}";
+    
+    let isFirstLoad = true;
+    let lastMsgCount = 0;
+
+    async function loadMessages() {
+        try {
+            const res = await fetch('/api/chat/messages');
+            const data = await res.json();
+            const messages = data.messages;
+
+            if (messages.length === lastMsgCount && !isFirstLoad) return;
+            lastMsgCount = messages.length;
+            chatWindow.innerHTML = ''; 
+
+            messages.forEach(msg => {
+                const isMe = msg.display_name === currentUser;
+                const isAdmin = msg.is_admin;
+                
+                let adminBadge = isAdmin ? `<i class="material-icons" style="font-size: 10px; color: gold;">verified</i>` : '';
+                let alignClass = isMe ? 'right' : 'left';
+                let adminClass = isAdmin ? 'admin' : '';
+
+                const html = `
+                    <div class="message ${alignClass} ${adminClass}">
+                        <div class="message-header">
+                            <span class="user-name">${msg.display_name} ${adminBadge}</span>
+                            <span class="timestamp">${formatTime(msg.timestamp)}</span>
+                        </div>
+                        <div class="message-body">${escapeHtml(msg.message)}</div>
+                    </div>
+                `;
+                chatWindow.innerHTML += html;
+            });
+
+            if (isFirstLoad) {
+                scrollToBottom();
+                isFirstLoad = false;
+            }
+        } catch (e) {
+            console.error("Chat Error:", e);
+        }
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = msgInput.value.trim();
+        if (!text) return;
+
+        msgInput.value = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('message', text);
+            
+            const res = await fetch('/api/chat/send', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (res.ok) {
+                loadMessages();
+                setTimeout(scrollToBottom, 200);
+            } else if(res.status === 429) {
+                alert("Calma! Aguarde alguns segundos (Anti-Flood).");
+            }
+        } catch (e) {
+            alert("Erro ao enviar.");
+        }
+    });
+
+    function scrollToBottom() {
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function formatTime(dateString) {
+        const parts = dateString.split(' ');
+        if(parts.length > 1) {
+            return parts[1].substring(0, 5); 
+        }
+        return dateString;
+    }
+
+    function escapeHtml(text) {
+        const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    loadMessages();
+    setInterval(loadMessages, 2000);
+</script>
+{% endblock %}

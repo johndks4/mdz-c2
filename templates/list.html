@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block header_title %}MY ATTACK LOGS{% endblock %}
+{% block content %}
+<div class="attack-panel">
+    {% if not active_attacks %}
+    <p style="color: #666; text-align: center; padding: 40px;">Nenhum ataque registado recentemente.</p>
+    {% else %}
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="color: #666; border-bottom: 1px solid #222;">
+                <th style="padding: 15px;">ALVO</th>
+                <th style="padding: 15px;">MÉTODO</th>
+                <th style="padding: 15px;">DURAÇÃO</th>
+                <th style="padding: 15px;">ESTADO</th>
+                <th style="padding: 15px;">AÇÃO</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atk in active_attacks %}
+            <tr style="border-bottom: 1px solid #111;">
+                <td style="padding: 15px; font-family: 'JetBrains Mono';">{{ atk.site }}</td>
+                <td style="padding: 15px;"><span style="color: var(--color-primary); font-weight: 800;">{{ atk.method }}</span></td>
+                <td style="padding: 15px;">{{ atk.time_total }}s</td>
+                <td style="padding: 15px;">
+                    {% if atk.is_running %}
+                    <span style="color: #0f0;">● EM CURSO</span>
+                    {% else %}
+                    <span style="color: #444;">FINALIZADO</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 15px;">
+                    <a href="/status/{{ atk.attack_id }}" style="color: #fff;"><i class="material-icons">query_stats</i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

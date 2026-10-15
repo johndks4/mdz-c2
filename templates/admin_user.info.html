@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block header_title %}USER DOSSIER: {{ target.username }}{% endblock %}
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+    <div class="attack-panel">
+        <h3 style="color: var(--color-primary);">DETALHES DA CONTA</h3>
+        <p><b>ID:</b> #{{ target.id }}</p>
+        <p><b>IP de Registo:</b> {{ target.reg_ip }}</p>
+        <p><b>Criado em:</b> {{ target.created_at }}</p>
+        <p><b>Status:</b> {{ 'BANIDO' if target.is_banned else 'ATIVO' }}</p>
+        
+        <div style="margin-top: 30px;">
+            <h4 style="color: #666;">AJUSTAR LIMITES PRIVADOS</h4>
+            <form action="/admin/user/edit/{{ target.id }}" method="POST">
+                <div class="cyber-input-group">
+                    <span class="cyber-label">SLOTS (CONCURRENCY)</span>
+                    <input type="number" name="concurrency" class="cyber-input" value="0">
+                </div>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">TEMPO MÁXIMO (S)</span>
+                    <input type="number" name="max_time" class="cyber-input" value="0">
+                </div>
+                <button type="submit" class="btn-fire" style="font-size: 0.8rem;">GUARDAR LIMITES</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="attack-panel">
+        <h3 style="color: var(--color-primary);">HISTÓRICO RECENTE DE ATAQUES</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <tr style="color: #666; text-align: left; border-bottom: 1px solid #222;">
+                <th style="padding: 10px;">ALVO</th>
+                <th style="padding: 10px;">MÉTODO</th>
+                <th style="padding: 10px;">DATA</th>
+            </tr>
+            {% for log in logs %}
+            <tr style="border-bottom: 1px solid #111;">
+                <td style="padding: 10px;">{{ log.site }}</td>
+                <td style="padding: 10px; color: var(--color-primary);">{{ log.method }}</td>
+                <td style="padding: 10px; color: #444;">{{ log.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

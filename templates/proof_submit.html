@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Enviar Prova{% endblock %}
+{% block header_title %}Submeter Queda{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="animation: slideUp 0.6s ease;">
+    
+    <div class="proof-box">
+        
+        <div class="proof-header">
+            <div class="icon-pulse">
+                <i class="material-icons">add_a_photo</i>
+            </div>
+            <h2 style="color: #fff; margin: 15px 0 5px;">Nova Comprovação</h2>
+            <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                Envie o print do site offline. <br>
+                <span style="color: #ff2a2a; font-weight: 800;">⚠️ Aviso: Falsificação resulta em Banimento.</span>
+            </p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="proofForm">
+            
+            <div class="input-wrapper">
+                <label>URL DO ALVO</label>
+                <div class="input-icon-group">
+                    <i class="material-icons">link</i>
+                    <input type="text" name="site" class="cyber-input" placeholder="https://site-alvo.com" required>
+                </div>
+            </div>
+
+            <div class="input-wrapper">
+                <label>COMENTÁRIO (OPCIONAL)</label>
+                <div class="input-icon-group">
+                    <i class="material-icons">chat_bubble_outline</i>
+                    <input type="text" name="comment" class="cyber-input" placeholder="Caiu em 10 segundos...">
+                </div>
+            </div>
+
+            <div class="upload-area" id="drop-area">
+                <input type="file" name="image" id="fileElem" accept="image/*" onchange="handleFiles(this.files)" required>
+                <label class="upload-label" for="fileElem">
+                    <i class="material-icons upload-icon">cloud_upload</i>
+                    <span class="upload-text">Clique ou arraste o Print aqui</span>
+                    <span class="file-name" id="fileName">Nenhum arquivo selecionado</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-fire">
+                ENVIAR PARA ANÁLISE <i class="material-icons" style="vertical-align: middle; margin-left: 5px;">send</i>
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<style>
+    /* Container Principal */
+    .proof-box {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Decoração Topo */
+    .proof-box::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, #ff2a2a, transparent);
+    }
+
+    /* Header */
+    .proof-header { text-align: center; margin-bottom: 35px; }
+    
+    .icon-pulse {
+        width: 70px; height: 70px; margin: 0 auto;
+        background: rgba(255, 42, 42, 0.1);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: #ff2a2a; border: 1px solid rgba(255, 42, 42, 0.2);
+        box-shadow: 0 0 20px rgba(255, 42, 42, 0.1);
+    }
+    .icon-pulse i { font-size: 32px; }
+
+    /* Inputs */
+    .input-wrapper { margin-bottom: 20px; }
+    .input-wrapper label {
+        display: block; color: #666; font-size: 0.75rem; font-weight: 800;
+        margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    
+    .input-icon-group { position: relative; }
+    .input-icon-group i {
+        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+        color: #444; font-size: 1.2rem; transition: 0.3s;
+    }
+    
+    .cyber-input {
+        width: 100%; background: #050505; border: 1px solid #333;
+        padding: 16px 16px 16px 45px; /* Espaço para o ícone */
+        border-radius: 12px; color: #fff; font-family: 'Inter', sans-serif;
+        box-sizing: border-box; transition: 0.3s; font-size: 1rem;
+    }
+    
+    .cyber-input:focus {
+        border-color: #ff2a2a; outline: none; background: rgba(255, 42, 42, 0.02);
+        box-shadow: 0 0 15px rgba(255, 42, 42, 0.1);
+    }
+    .cyber-input:focus + i, .cyber-input:focus ~ i { color: #ff2a2a; }
+
+    /* Área de Upload Customizada */
+    .upload-area { margin-bottom: 30px; }
+    .upload-area input[type="file"] { display: none; }
+    
+    .upload-label {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: #050505; border: 2px dashed #333; border-radius: 16px;
+        padding: 40px 20px; cursor: pointer; transition: 0.3s;
+    }
+    
+    .upload-label:hover, .upload-area.dragover .upload-label {
+        border-color: #ff2a2a; background: rgba(255, 42, 42, 0.05);
+    }
+    
+    .upload-icon { font-size: 3rem; color: #444; margin-bottom: 10px; transition: 0.3s; }
+    .upload-label:hover .upload-icon { color: #ff2a2a; transform: translateY(-5px); }
+    
+    .upload-text { color: #fff; font-weight: 700; font-size: 1rem; }
+    .file-name { color: #666; font-size: 0.8rem; margin-top: 5px; font-family: monospace; }
+
+    /* Botão */
+    .btn-fire {
+        width: 100%; padding: 18px; border: none; border-radius: 12px;
+        background: linear-gradient(90deg, #ff2a2a, #b00);
+        color: #fff; font-weight: 900; font-size: 1rem; text-transform: uppercase;
+        letter-spacing: 1px; cursor: pointer; transition: 0.3s;
+        box-shadow: 0 5px 20px rgba(255, 42, 42, 0.2);
+    }
+    .btn-fire:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 42, 42, 0.4); }
+
+    /* Responsivo */
+    @media (max-width: 600px) {
+        .proof-box { padding: 25px; }
+    }
+</style>
+
+<script>
+    // Lógica para mostrar o nome do arquivo selecionado
+    function handleFiles(files) {
+        const fileNameElement = document.getElementById('fileName');
+        const iconElement = document.querySelector('.upload-icon');
+        const labelElement = document.querySelector('.upload-label');
+        
+        if (files.length > 0) {
+            fileNameElement.textContent = files[0].name;
+            fileNameElement.style.color = '#2ecc71'; // Verde sucesso
+            iconElement.textContent = 'check_circle';
+            iconElement.style.color = '#2ecc71';
+            labelElement.style.borderColor = '#2ecc71';
+            labelElement.style.background = 'rgba(46, 204, 113, 0.05)';
+        }
+    }
+
+    // Drag and Drop Visual
+    const dropArea = document.getElementById('drop-area');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+    });
+
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        document.getElementById('fileElem').files = files;
+        handleFiles(files);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Meu Perfil{% endblock %}
+{% block header_title %}IDENTIDADE OPERACIONAL{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="animation: slideUp 0.6s ease;">
+
+    <form method="POST" enctype="multipart/form-data" class="profile-grid">
+        
+        <div class="agent-card">
+            <div class="avatar-wrapper">
+                <img id="avatarPreview" src="/static/uploads/{{ profile.profile_pic_filename }}" alt="Avatar">
+                
+                <label for="profile_pic" class="avatar-edit-btn">
+                    <i class="material-icons">edit</i>
+                </label>
+                <input type="file" name="profile_pic" id="profile_pic" accept="image/*" onchange="previewImage(this)">
+            </div>
+
+            <div class="agent-identity">
+                <h2 id="displayNamePreview">{{ profile.display_name }}</h2>
+                <span class="username-tag">@{{ session.username }}</span>
+            </div>
+
+            <div class="rank-badge">
+                <span class="emoji">{{ profile.rank_info.emoji }}</span>
+                <span class="title">{{ profile.rank_info.title }}</span>
+            </div>
+
+            <div class="stats-mini-grid">
+                <div class="mini-stat">
+                    <label>Ataques</label>
+                    <div class="val">{{ real_stats.running_attacks }}</div>
+                </div>
+                <div class="mini-stat">
+                    <label>Plano</label>
+                    <div class="val" style="color: var(--color-primary);">ATIVO</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel">
+            <div class="panel-header">
+                <i class="material-icons">tune</i>
+                <h3>CONFIGURAÇÕES DA CONTA</h3>
+            </div>
+
+            <div class="input-wrapper">
+                <label>DISPLAY NAME (NOME PÚBLICO)</label>
+                <div class="cyber-input-group">
+                    <i class="material-icons">badge</i>
+                    <input type="text" name="display_name" class="cyber-input" value="{{ profile.display_name }}" oninput="updateNamePreview(this.value)" placeholder="Como quer ser chamado?">
+                </div>
+                <div class="hint">Este nome aparecerá no Chat Global e nos Logs.</div>
+            </div>
+
+            <div class="input-wrapper disabled">
+                <label>USERNAME (LOGIN)</label>
+                <div class="cyber-input-group">
+                    <i class="material-icons">lock</i>
+                    <input type="text" class="cyber-input" value="{{ session.username }}" disabled style="opacity: 0.5; cursor: not-allowed;">
+                </div>
+                <div class="hint">O nome de usuário de login não pode ser alterado.</div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 15px;">
+                <button type="submit" class="btn-save">
+                    <i class="material-icons">save</i> SALVAR PERFIL
+                </button>
+                <a href="/logout" class="btn-logout">
+                    LOGOUT
+                </a>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<style>
+    /* Layout Grid */
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    /* --- CARTÃO DO AGENTE (ESQUERDA) --- */
+    .agent-card {
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        height: fit-content;
+        position: relative;
+        overflow: hidden;
+    }
+    .agent-card::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+        background: linear-gradient(90deg, var(--color-primary), transparent);
+    }
+
+    /* Avatar */
+    .avatar-wrapper {
+        position: relative;
+        width: 120px; height: 120px;
+        margin: 0 auto 20px;
+    }
+    .avatar-wrapper img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        border-radius: 20px;
+        border: 2px solid #333;
+        background: #151515;
+    }
+    .avatar-edit-btn {
+        position: absolute; bottom: -5px; right: -5px;
+        background: var(--color-primary); color: #fff;
+        width: 35px; height: 35px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: 0.2s; border: 2px solid #0a0a0a;
+    }
+    .avatar-edit-btn:hover { transform: scale(1.1); }
+    input[type="file"] { display: none; }
+
+    /* Identidade */
+    .agent-identity h2 { margin: 0; color: #fff; font-size: 1.2rem; }
+    .username-tag { display: block; color: #666; font-family: monospace; font-size: 0.9rem; margin-top: 5px; }
+
+    /* Rank Badge */
+    .rank-badge {
+        background: #111; border: 1px solid #222;
+        padding: 8px 15px; border-radius: 50px;
+        display: inline-flex; align-items: center; gap: 8px;
+        margin: 20px 0;
+    }
+    .rank-badge .title { color: #fff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
+
+    /* Mini Stats */
+    .stats-mini-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        border-top: 1px solid #222; padding-top: 20px;
+    }
+    .mini-stat label { display: block; font-size: 0.7rem; color: #555; text-transform: uppercase; margin-bottom: 5px; }
+    .mini-stat .val { color: #eee; font-weight: 800; font-family: monospace; font-size: 1.1rem; }
+
+
+    /* --- PAINEL DE CONFIG (DIREITA) --- */
+    .settings-panel {
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 40px;
+    }
+
+    .panel-header {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 30px; border-bottom: 1px solid #1a1a1a; padding-bottom: 20px;
+    }
+    .panel-header i { color: var(--color-primary); }
+    .panel-header h3 { margin: 0; color: #fff; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Inputs */
+    .input-wrapper { margin-bottom: 25px; }
+    .input-wrapper label {
+        display: block; color: #888; font-size: 0.7rem; font-weight: 800;
+        margin-bottom: 8px; letter-spacing: 1px;
+    }
+    .cyber-input-group { position: relative; }
+    .cyber-input-group i {
+        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+        color: #444; font-size: 1.2rem;
+    }
+    .cyber-input {
+        width: 100%; background: #050505; border: 1px solid #333;
+        padding: 16px 16px 16px 45px;
+        border-radius: 10px; color: #fff;
+        font-family: 'Inter', sans-serif; box-sizing: border-box;
+        transition: 0.3s; font-size: 1rem;
+    }
+    .cyber-input:focus {
+        border-color: var(--color-primary); outline: none;
+        background: #080808;
+        box-shadow: 0 0 15px rgba(255, 42, 42, 0.1);
+    }
+    .hint { font-size: 0.75rem; color: #444; margin-top: 8px; }
+
+    /* Botões */
+    .btn-save {
+        flex: 2;
+        background: linear-gradient(90deg, var(--color-primary), #b00);
+        border: none; padding: 16px; border-radius: 10px;
+        color: #fff; font-weight: 800; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: 0.3s; letter-spacing: 1px;
+    }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255, 42, 42, 0.3); }
+
+    .btn-logout {
+        flex: 1;
+        background: #111; border: 1px solid #333;
+        color: #888; text-decoration: none;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; border-radius: 10px; transition: 0.3s; font-size: 0.9rem;
+    }
+    .btn-logout:hover { background: #222; color: #fff; border-color: #555; }
+
+    /* Mobile */
+    @media (max-width: 800px) {
+        .profile-grid { grid-template-columns: 1fr; }
+        .agent-card { max-width: 400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+    }
+</style>
+
+<script>
+    // Atualiza preview da imagem instantaneamente
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Atualiza nome em tempo real no cartão
+    function updateNamePreview(val) {
+        document.getElementById('displayNamePreview').innerText = val || 'Sem Nome';
+    }
+</script>
+{% endblock %}

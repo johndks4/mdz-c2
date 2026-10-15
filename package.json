@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "axios": "^1.13.2",
+    "chalk": "^4.1.2",
+    "cheerio": "^1.1.2",
+    "cluster": "^0.7.7",
+    "colors": "^1.4.0",
+    "crypto": "^1.0.1",
+    "fake-useragent": "^1.0.1",
+    "fs": "^0.0.1-security",
+    "geoip-country": "^5.0.202512052343",
+    "gradient-string": "^3.0.0",
+    "header-generator": "^2.1.77",
+    "hpack": "^1.0.0",
+    "http2": "^3.3.7",
+    "net": "^1.0.2",
+    "rand-referer": "^1.0.0",
+    "request": "^2.88.2",
+    "socks": "^2.8.7",
+    "tls": "^0.0.1",
+    "undici": "^5.14.0",
+    "url": "^0.11.4",
+    "url-status-code": "^2.0.0",
+    "user-agents": "^1.1.669",
+    "yargs": "^17.7.2"
+  }
+}

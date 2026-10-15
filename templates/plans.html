@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Planos VIP{% endblock %}
+{% block header_title %}UPGRADE DE CONTA{% endblock %}
+
+{% block content %}
+<div class="plans-wrapper">
+    
+    <div style="text-align: center; margin-bottom: 50px;">
+        <h2 style="color: #fff; font-size: 2rem; margin: 0 0 10px;">ESCOLHA SEU PODER</h2>
+        <p style="color: #666; max-width: 500px; margin: 0 auto;">Acesso a servidores privados, bypass de proteção e suporte 24/7.</p>
+    </div>
+
+    <div class="plans-grid">
+        
+        <div class="plan-card">
+            <div class="plan-icon">👻</div>
+            <div class="plan-name">GHOST</div>
+            <div class="plan-price">Grátis</div>
+            
+            <ul class="features">
+                <li><i class="material-icons">timer</i> 60s Tempo Limite</li>
+                <li><i class="material-icons">layers</i> 2 Slots (Novo!)</li>
+                <li><i class="material-icons">speed</i> Baixa Prioridade</li>
+                <li class="disabled"><i class="material-icons">block</i> <s>Métodos VIP</s></li>
+            </ul>
+            
+            <button class="btn-plan current">SEU PLANO</button>
+        </div>
+
+        <div class="plan-card featured">
+            <div class="badge">RECOMENDADO 🔥</div>
+            <div class="plan-icon">🚀</div>
+            <div class="plan-name">PATRÃO</div>
+            <div class="plan-price">R$ 30<span>/mês</span></div>
+            
+            <ul class="features">
+                <li><i class="material-icons">timer</i> <strong>300s</strong> Tempo Limite</li>
+                <li><i class="material-icons">layers</i> <strong>3</strong> Slots Concorrentes</li>
+                <li><i class="material-icons">bolt</i> <strong>Alta</strong> Prioridade</li>
+                <li><i class="material-icons">vpn_key</i> <strong>Bypass</strong> L7 Incluso</li>
+            </ul>
+            
+            <a href="https://t.me/johnmdzapis" target="_blank" class="btn-plan primary">COMPRAR AGORA</a>
+        </div>
+
+        <div class="plan-card">
+            <div class="plan-icon">👑</div>
+            <div class="plan-name">MAGNATA</div>
+            <div class="plan-price">R$ 80<span>/mês</span></div>
+            
+            <ul class="features">
+                <li><i class="material-icons">timer</i> <strong>1200s</strong> Tempo Limite</li>
+                <li><i class="material-icons">layers</i> <strong>10</strong> Slots Concorrentes</li>
+                <li><i class="material-icons">whatshot</i> <strong>Suprema</strong> Prioridade</li>
+                <li><i class="material-icons">dns</i> <strong>API</strong> Reseller Key</li>
+            </ul>
+            
+            <a href="https://t.me/johnmdzapis" target="_blank" class="btn-plan">VIRAR ELITE</a>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .plans-wrapper { animation: slideUp 0.6s ease; max-width: 1200px; margin: 0 auto; }
+    
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        align-items: center;
+    }
+
+    .plan-card {
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 24px;
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+        transition: transform 0.3s;
+    }
+    
+    .plan-card:hover { transform: translateY(-10px); border-color: #333; }
+
+    /* Estilo Destaque (Meio) */
+    .plan-card.featured {
+        background: linear-gradient(145deg, #111, #080808);
+        border: 1px solid var(--color-primary);
+        box-shadow: 0 0 30px rgba(255, 42, 42, 0.15);
+        transform: scale(1.05);
+        z-index: 2;
+    }
+    .plan-card.featured:hover { transform: scale(1.08); }
+
+    .badge {
+        position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+        background: var(--color-primary); color: #fff;
+        padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;
+    }
+
+    .plan-icon { font-size: 3rem; margin-bottom: 15px; }
+    
+    .plan-name { 
+        color: #666; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 5px; 
+    }
+    
+    .plan-price { 
+        font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 30px; 
+    }
+    .plan-price span { font-size: 1rem; color: #444; }
+
+    .features { list-style: none; padding: 0; margin: 0 0 30px; text-align: left; }
+    .features li {
+        padding: 12px 0; border-bottom: 1px solid #151515; color: #aaa; font-size: 0.95rem;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .features li i { color: var(--color-primary); font-size: 1.2rem; }
+    .features li.disabled { color: #444; }
+    .features li.disabled i { color: #444; }
+    .features li strong { color: #fff; margin-right: 4px; }
+
+    .btn-plan {
+        display: block; width: 100%; padding: 16px; border-radius: 12px;
+        text-decoration: none; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+        border: 1px solid #333; background: transparent; color: #fff; transition: 0.3s;
+    }
+    .btn-plan:hover { background: #222; }
+    
+    .btn-plan.primary {
+        background: var(--color-primary); border-color: var(--color-primary);
+        box-shadow: 0 5px 20px rgba(255, 42, 42, 0.3);
+    }
+    .btn-plan.primary:hover { background: #d00; box-shadow: 0 5px 30px rgba(255, 42, 42, 0.5); }
+    
+    .btn-plan.current {
+        border-color: #222; color: #444; cursor: default;
+    }
+    .btn-plan.current:hover { background: transparent; }
+
+    @media (max-width: 768px) {
+        .plan-card.featured { transform: scale(1); }
+        .plan-card.featured:hover { transform: translateY(-10px); }
+    }
+</style>
+{% endblock %}

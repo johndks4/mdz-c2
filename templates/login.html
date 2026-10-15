@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login · MDZ C2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07070a;--panel:#0d0d12;--border:#1e1e2a;--red:#ff2d55;--text:#e8e8ef;--muted:#6b6b7b}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
+background-image:radial-gradient(ellipse 70% 50% at 50% -20%,#ff2d5533,transparent)}
+.box{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:36px;box-shadow:0 20px 60px #0008}
+h1{font-family:'JetBrains Mono',monospace;font-size:1.8rem;margin:0 0 8px;text-align:center;font-weight:800}
+h1 span{color:var(--red)}
+.sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:28px}
+label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;font-weight:600}
+input{width:100%;background:#12121a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:.95rem;margin-bottom:16px;outline:none}
+input:focus{border-color:var(--red)}
+button{width:100%;background:linear-gradient(135deg,var(--red),#c41840);color:#fff;border:none;border-radius:10px;padding:14px;font-weight:700;cursor:pointer;font-size:.95rem}
+button:hover{filter:brightness(1.08)}
+.err{background:#2a0a12;border:1px solid #5a1a28;color:#ff8a9a;padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:.88rem}
+a{color:var(--red);text-decoration:none;font-size:.85rem}
+.foot{text-align:center;margin-top:18px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>MDZ <span>C2</span></h1>
+  <p class="sub">acesso ao núcleo</p>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <label>Usuário</label>
+    <input name="username" required autocomplete="username">
+    <label>Senha</label>
+    <input type="password" name="password" required autocomplete="current-password">
+    <div class="cf-turnstile" data-sitekey="0x4AAAAAACH6BTqZxV_nG9wJ" data-theme="dark" style="margin-bottom:16px"></div>
+    <button type="submit">ENTRAR</button>
+  </form>
+  <p class="foot">sem conta? <a href="/register">registrar</a></p>
+</div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</body>
+</html>
