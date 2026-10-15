@@ -129,6 +129,12 @@ def init_db():
         db.commit()
 
 # --- MIDDLEWARES ---
+try:
+    with app.app_context():
+        init_db()
+except Exception as _e:
+    print("init_db:", _e)
+
 @app.before_request
 def security():
     # TEMP: login desativado
@@ -145,28 +151,60 @@ def security():
         session['ip_verified'] = True
     
     if 'user_id' in session:
-        u = get_db().execute("SELECT * FROM users WHERE id=?", (session['user_id'],)).fetchone()
-        if u and u['is_banned']: session.clear(); return render_template('banned.html'), 403
+        try:
+            u = get_db().execute("SELECT * FROM users WHERE id=?", (session['user_id'],)).fetchone()
+            if u is not None:
+                banned = 0
+                try:
+                    banned = u['is_banned']
+                except (IndexError, KeyError):
+                    banned = 0
+                if banned:
+                    session.clear()
+                    return render_template('banned.html'), 403
+        except Exception:
+            pass
 
     if 'logged_in' in session:
-        g.profile = get_profile()
-        g.user_limits_data = load_limits(session['user_id'])
-        db = get_db()
-        g.real_stats = {
-            'attacks_today': db.execute("SELECT COUNT(id) FROM attack_log WHERE date(timestamp) = date('now')").fetchone()[0],
-            'running_attacks': len(active_attacks),
-            'registered_users': db.execute("SELECT COUNT(id) FROM users").fetchone()[0]
-        }
+        try:
+            g.profile = get_profile()
+        except Exception:
+            g.profile = {'display_name': session.get('username', 'user'), 'profile_pic_filename': 'default.png', 'rank_info': {'emoji': '👑', 'title': 'Admin'}}
+        try:
+            g.user_limits_data = load_limits(session['user_id'])
+        except Exception:
+            g.user_limits_data = {'concurrency': 5, 'max_time': 300, 'max_rate': 128}
+        try:
+            db = get_db()
+            g.real_stats = {
+                'attacks_today': db.execute("SELECT COUNT(id) FROM attack_log WHERE date(timestamp) = date('now')").fetchone()[0],
+                'running_attacks': len(active_attacks),
+                'registered_users': db.execute("SELECT COUNT(id) FROM users").fetchone()[0]
+            }
+        except Exception:
+            g.real_stats = {'attacks_today': 0, 'running_attacks': 0, 'registered_users': 0}
 
 def load_limits(uid):
     db = get_db()
-    gl = db.execute("SELECT * FROM attack_limits WHERE id=1").fetchone()
-    lim = {'concurrency': gl['max_threads'], 'max_time': gl['max_time'], 'max_rate': gl['max_rate']}
-    ul = db.execute("SELECT * FROM user_limits WHERE user_id=?", (uid,)).fetchone()
-    if ul:
-        if ul['max_time'] > 0: lim['max_time'] = ul['max_time']
-        if ul['concurrency'] > 0: lim['concurrency'] = ul['concurrency']
-        if ul['max_rate'] > 0: lim['max_rate'] = ul['max_rate']
+    lim = {'concurrency': 5, 'max_time': 300, 'max_rate': 128}
+    try:
+        gl = db.execute("SELECT * FROM attack_limits WHERE id=1").fetchone()
+        if gl:
+            lim = {
+                'concurrency': gl['max_threads'] or 5,
+                'max_time': gl['max_time'] or 300,
+                'max_rate': gl['max_rate'] or 128,
+            }
+    except Exception:
+        pass
+    try:
+        ul = db.execute("SELECT * FROM user_limits WHERE user_id=?", (uid,)).fetchone()
+        if ul:
+            if ul['max_time'] and ul['max_time'] > 0: lim['max_time'] = ul['max_time']
+            if ul['concurrency'] and ul['concurrency'] > 0: lim['concurrency'] = ul['concurrency']
+            if ul['max_rate'] and ul['max_rate'] > 0: lim['max_rate'] = ul['max_rate']
+    except Exception:
+        pass
     return lim
 
 def get_profile():
