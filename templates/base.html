@@ -66,16 +66,12 @@ label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08
 <body>
 <aside class="sidebar">
   <div class="sidebar-header"><h2>MDZ <span>C2</span></h2></div>
-  <nav class="nav-links">
+    <nav class="nav-links">
     <a class="nav-item" href="/"><i class="material-icons">rocket_launch</i> Painel</a>
     <a class="nav-item" href="/list"><i class="material-icons">list_alt</i> Ativos</a>
+    <a class="nav-item" href="/ranking"><i class="material-icons">emoji_events</i> Ranking</a>
     <a class="nav-item" href="/proof/feed"><i class="material-icons">photo_library</i> Proofs</a>
-    <a class="nav-item" href="/plans"><i class="material-icons">workspace_premium</i> Planos</a>
     <a class="nav-item" href="/profile"><i class="material-icons">person</i> Perfil</a>
-    {% if session.get('is_admin') %}
-    <a class="nav-item" href="/admin/users"><i class="material-icons">admin_panel_settings</i> Admin</a>
-    {% endif %}
-    <a class="nav-item" href="/logout"><i class="material-icons">logout</i> Sair</a>
   </nav>
 </aside>
 <main class="main">
