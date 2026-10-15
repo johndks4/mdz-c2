@@ -131,9 +131,18 @@ def init_db():
 # --- MIDDLEWARES ---
 @app.before_request
 def security():
+    # TEMP: login desativado
+    if 'logged_in' not in session:
+        session.update({
+            'logged_in': True,
+            'user_id': 1,
+            'username': 'admin_master',
+            'is_admin': True,
+        })
+
     if request.endpoint != 'static' and not session.get('ip_verified'):
-        if check_vpn_proxy(get_real_ip()): return render_template('blocked_ip.html', ip=get_real_ip()), 403
-        else: session['ip_verified'] = True
+        # VPN check temporariamente desligado junto com o login
+        session['ip_verified'] = True
     
     if 'user_id' in session:
         u = get_db().execute("SELECT * FROM users WHERE id=?", (session['user_id'],)).fetchone()
@@ -174,8 +183,15 @@ def get_profile():
     return {**dict(p), 'rank_info': rank}
 
 def login_required(f):
+    # TEMP: login desativado — sessão guest admin automática
     def wrap(*args, **kwargs):
-        if 'logged_in' not in session: return redirect(url_for('login'))
+        if 'logged_in' not in session:
+            session.update({
+                'logged_in': True,
+                'user_id': 1,
+                'username': 'admin_master',
+                'is_admin': True,
+            })
         return f(*args, **kwargs)
     wrap.__name__ = f.__name__
     return wrap
@@ -299,14 +315,14 @@ class NATKMonitor:
 # --- ROTAS PRINCIPAIS ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        u, p = request.form['username'], request.form['password']
-        usr = get_db().execute("SELECT * FROM users WHERE username=?", (u,)).fetchone()
-        if usr and verify_password(usr['password_hash'], p):
-            if usr['is_banned']: return render_template('banned.html'), 403
-            session.update({'logged_in': True, 'user_id': usr['id'], 'username': u, 'is_admin': usr['is_admin']})
-            return redirect(url_for('index'))
-    return render_template('login.html')
+    # TEMP: login desativado
+    session.update({
+        'logged_in': True,
+        'user_id': 1,
+        'username': 'admin_master',
+        'is_admin': True,
+    })
+    return redirect(url_for('index'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
