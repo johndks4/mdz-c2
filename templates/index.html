@@ -5,41 +5,97 @@
   <div class="stat"><div class="v">{{ user_plan.max_time }}s</div><div class="l">tempo máx</div></div>
   <div class="stat"><div class="v">{{ user_plan.concurrency }}</div><div class="l">slots</div></div>
   <div class="stat"><div class="v">{{ user_plan.max_rate }}</div><div class="l">rate</div></div>
-  <div class="stat"><div class="v" style="color:var(--ok);font-size:1rem">C2</div><div class="l">api remota</div></div>
+  <div class="stat"><div class="v" style="color:var(--ok);font-size:.95rem">AES</div><div class="l">payload</div></div>
 </div>
 
-<div class="card" style="max-width:560px">
+<div class="card" style="max-width:520px;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 100% 0%,#ff2d5518,transparent 55%);pointer-events:none"></div>
   <h2 class="card-title"><span class="dot"></span> NOVA OFENSIVA</h2>
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
-  <form method="POST">
+
+  <form id="atkForm" method="POST" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <div style="margin-bottom:16px">
+    <input type="hidden" name="blob" id="blob">
+    <input type="hidden" name="iv" id="iv">
+
+    <div style="margin-bottom:14px">
       <label>Alvo</label>
-      <input class="cyber-input" name="site" placeholder="https://exemplo.com" required>
+      <input class="cyber-input" id="f_site" placeholder="https://exemplo.com" required>
     </div>
-    <div class="grid-2" style="margin-bottom:16px">
+    <div class="grid-2" style="margin-bottom:14px">
       <div>
         <label>Método</label>
-        <select name="method" class="cyber-input" required>
+        <select id="f_method" class="cyber-input" required>
           {% for m in local_methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
         </select>
       </div>
       <div>
         <label>Duração (s)</label>
-        <input class="cyber-input" type="number" name="time" min="1" max="{{ user_plan.max_time }}" value="60" required>
+        <input class="cyber-input" id="f_time" type="number" min="1" max="{{ user_plan.max_time }}" value="60" required>
       </div>
     </div>
-    <div class="grid-2" style="margin-bottom:22px">
+    <div class="grid-2" style="margin-bottom:20px">
       <div>
         <label>Threads</label>
-        <input class="cyber-input" type="number" name="threads" min="1" max="{{ user_plan.concurrency }}" value="1">
+        <input class="cyber-input" id="f_threads" type="number" min="1" max="{{ user_plan.concurrency }}" value="1">
       </div>
       <div>
         <label>Rate</label>
-        <input class="cyber-input" type="number" name="rate" value="64">
+        <input class="cyber-input" id="f_rate" type="number" value="64">
       </div>
     </div>
-    <button type="submit" class="cyber-btn" style="width:100%">INJETAR OGIVA</button>
+    <button type="submit" class="cyber-btn" id="btnGo" style="width:100%">INJETAR OGIVA</button>
+    <p class="mono" style="margin:14px 0 0;font-size:.68rem;color:var(--muted);text-align:center">payload AES-256-GCM · csrf · origin lock</p>
   </form>
 </div>
+
+<script>
+const PK_B64 = "{{ payload_key }}";
+
+function b64ToBytes(b64){
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+function bytesToB64(buf){
+  const bytes = new Uint8Array(buf);
+  let s='';
+  for(let i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+
+async function encryptPayload(obj){
+  const keyRaw = b64ToBytes(PK_B64);
+  const key = await crypto.subtle.importKey('raw', keyRaw, {name:'AES-GCM'}, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const pt = new TextEncoder().encode(JSON.stringify(obj));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, pt);
+  return { blob: bytesToB64(ct), iv: bytesToB64(iv) };
+}
+
+document.getElementById('atkForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btnGo');
+  btn.disabled = true;
+  btn.textContent = 'CIFRANDO…';
+  try{
+    const payload = {
+      site: document.getElementById('f_site').value.trim(),
+      method: document.getElementById('f_method').value,
+      time: parseInt(document.getElementById('f_time').value, 10),
+      threads: document.getElementById('f_threads').value,
+      rate: document.getElementById('f_rate').value
+    };
+    const enc = await encryptPayload(payload);
+    document.getElementById('blob').value = enc.blob;
+    document.getElementById('iv').value = enc.iv;
+    e.target.submit();
+  }catch(err){
+    alert('Falha ao cifrar: '+err);
+    btn.disabled = false;
+    btn.textContent = 'INJETAR OGIVA';
+  }
+});
+</script>
 {% endblock %}

